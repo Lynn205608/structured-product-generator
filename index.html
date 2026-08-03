@@ -137,6 +137,7 @@
             <button class="tab-button transition-all duration-300 hover:bg-[#f0f7ff] hover:text-[#004aad]" onclick="switchTab('spread', event)">价差结构</button>
             <button class="tab-button transition-all duration-300 hover:bg-[#f0f7ff] hover:text-[#004aad]" onclick="switchTab('vanilla', event)">香草结构</button>
             <button class="tab-button transition-all duration-300 hover:bg-[#f0f7ff] hover:text-[#004aad]" onclick="switchTab('autocall', event)">自动赎回结构</button>
+            <button class="tab-button transition-all duration-300 hover:bg-[#f0f7ff] hover:text-[#004aad]" onclick="switchTab('dividend_autocall', event)">红利自动赎回</button>
         </div>
 
         <!-- 鲨鱼鳍结构内容 -->
@@ -1079,6 +1080,183 @@
             </div>
         </div>
         </div>
+
+        <!-- 红利自动赎回结构内容 -->
+        <div id="dividend_autocall-content" class="tab-content">
+            <!-- 输入区域 -->
+            <div class="mb-8 p-5 border border-gray-200 rounded-xl shadow-sm">
+                <h2 class="text-xl font-bold mb-4">报价要素输入</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block mb-1 font-medium">产品方向</label>
+                        <select id="da-productDirection" class="w-full p-2 border border-gray-300 rounded" onchange="App.generateDividendAutocallProduct()">
+                            <option value="bull">看涨</option>
+                            <option value="bear">看跌</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">挂钩标的</label>
+                        <select id="da-underlying" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="000016.SH/上证50">000016.SH/上证50</option>
+                            <option value="000300.SH/沪深300">000300.SH/沪深300</option>
+                            <option value="000905.SH/中证500" selected>000905.SH/中证500</option>
+                            <option value="000852.SH/中证1000">000852.SH/中证1000</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                        <div id="da-customUnderlying-container" class="mt-2 hidden">
+                            <input type="text" id="da-customUnderlying" placeholder="请输入自定义挂钩标的（例如：000001.SH/上证指数）" class="w-full p-2 border border-gray-300 rounded">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">观察期限</label>
+                        <select id="da-term" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="6M">6个月(6M)</option>
+                            <option value="12M" selected>12个月(1Y)</option>
+                            <option value="18M">18个月(1.5Y)</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                        <div id="da-customTerm-container" class="mt-2 hidden">
+                            <input type="text" id="da-customTerm" placeholder="请输入自定义期限（例如：24个月(2Y)）" class="w-full p-2 border border-gray-300 rounded">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">敲出价格（期初价格%）</label>
+                        <input type="number" step="0.01" id="da-knockOutPrice" value="102.00" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">敲入价格（期初价格%）</label>
+                        <input type="number" step="0.01" id="da-knockInPrice" value="90.00" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">敲出收益率（年化%）</label>
+                        <input type="number" step="0.01" id="da-knockOutRate" value="6.30" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">红利收益率（年化%）</label>
+                        <input type="number" step="0.01" id="da-fixedRate" value="4.00" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">敲入收益率（年化%）</label>
+                        <input type="number" step="0.01" id="da-knockInRate" value="0.10" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">认购起点</label>
+                        <input type="text" id="da-subscription" value="单笔5万元起认购，1万元追加" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button onclick="App.generateDividendAutocallProduct()" class="bg-[#004aad] text-white px-4 py-2 rounded-lg hover:bg-[#003d7a] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">生成产品介绍</button>
+                    <button onclick="App.resetDividendAutocallForm()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">重置</button>
+                    <button onclick="App.exportDividendAutocallToPPT()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <span id="da-exportBtnText">导出PPT</span>
+                        <span id="da-exportLoading" class="loading hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 产品介绍区域 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 左侧产品信息 -->
+                <div>
+                    <h2 class="text-2xl font-bold mb-4 text-[#004aad]">红利自动赎回结构</h2>
+                    <div class="border border-gray-300 rounded-lg overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="table-header">
+                                    <th class="p-2 text-left">凭证系列</th>
+                                    <th class="p-2 text-left">凤玺系列</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">结构</td>
+                                    <td class="p-2" id="da-infoStructure">红利自动赎回</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">认购起点</td>
+                                    <td class="p-2" id="da-infoSubscription">单笔5万元起认购，1万元追加</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">敲出观察频率</td>
+                                    <td class="p-2">每月定期敲出观察</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">敲入观察频率</td>
+                                    <td class="p-2">每日敲入观察</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">挂钩标的名称（代码）</td>
+                                    <td class="p-2" id="da-infoUnderlying">000905.SH/中证500</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">期限</td>
+                                    <td class="p-2" id="da-infoTerm">观察期12个月</td>
+                                </tr>
+                                <tr class="border-b border-gray-200 bg-[#f0f7ff]">
+                                    <td class="p-2 font-medium">结构方向</td>
+                                    <td class="p-2 font-medium text-[#004aad]" id="da-infoDirection">看涨</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="p-2 font-medium">收益情况</td>
+                                    <td class="p-2" id="da-infoReturn">
+                                        <!-- 收益情况将通过JS动态生成 -->
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="p-3 bg-gray-50 border-t border-gray-200">
+                            <p><span class="font-medium">基本观点：</span>关注本金安全，预期标的窄幅震荡</p>
+                            <p class="mt-2 text-sm text-gray-600"><span class="font-medium">风险提示：</span>本产品为结构性产品，收益取决于挂钩标的表现，存在收益波动风险，请根据自身风险承受能力谨慎投资。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧损益图区域 -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">
+                        <span class="chart-title">损益图</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 触发敲出损益图 -->
+                        <div class="relative" id="da-knockOutContainer">
+                            <div class="direction-label" id="da-knockOutLabel">触发敲出损益图</div>
+                            <div class="chart-container border border-gray-200 rounded-lg p-3 shadow-sm">
+                                <canvas id="da-knockOutChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 未触发敲出损益图 -->
+                        <div class="relative" id="da-nonKnockOutContainer">
+                            <div class="direction-label" id="da-nonKnockOutLabel">未触发敲出损益图</div>
+                            <div class="chart-container border border-gray-200 rounded-lg p-3 shadow-sm">
+                                <canvas id="da-nonKnockOutChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 报价核心要素参考 -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-bold mb-2">报价核心要素参考：</h3>
+                        <table class="min-w-full border border-gray-200 rounded-lg shadow-sm reference-table">
+                            <thead>
+                                <tr class="bg-[#004aad] text-white">
+                                    <th class="p-2 border border-gray-300">序号</th>
+                                    <th class="p-2 border border-gray-300">期限</th>
+                                    <th class="p-2 border border-gray-300">敲出价格</th>
+                                    <th class="p-2 border border-gray-300">敲入价格</th>
+                                    <th class="p-2 border border-gray-300">固定收益(红利)</th>
+                                    <th class="p-2 border border-gray-300">敲出收益</th>
+                                    <th class="p-2 border border-gray-300">敲入收益</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
     
     <script>
         // 切换标签页
@@ -1089,6 +1267,7 @@
             document.getElementById('spread-content').classList.remove('active');
             document.getElementById('vanilla-content').classList.remove('active');
             document.getElementById('autocall-content').classList.remove('active');
+            document.getElementById('dividend_autocall-content').classList.remove('active');
             
             // 移除所有按钮的激活状态
             document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1117,6 +1296,8 @@
                 App.generateVanillaProduct();
             } else if (tabName === 'autocall') {
                 App.generateAutocallProduct();
+            } else if (tabName === 'dividend_autocall') {
+                App.generateDividendAutocallProduct();
             }
         }
 
@@ -1263,7 +1444,7 @@
                                         type: 'label',
                                         content: `${knockOutRate}%`,
                                         xValue: xMax - 10,
-                                        yValue: knockOutRate + 0.5,
+                                        yValue: knockOutRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1331,7 +1512,7 @@
                                         type: 'label',
                                         content: `${knockOutPrice}%`,
                                         xValue: knockOutPrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -1342,7 +1523,7 @@
                                         type: 'label',
                                         content: `${maxRate}%`,
                                         xValue: knockOutPrice - 2,
-                                        yValue: maxRate,
+                                        yValue: maxRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1353,7 +1534,7 @@
                                         type: 'label',
                                         content: `区间参与率 ${participation}%`,
                                         xValue: 100 + ((knockOutPrice - 100) / 2),
-                                        yValue: (fixedRate + maxRate) / 2,
+                                        yValue: (fixedRate + maxRate) / 2 + Math.max(maxY * 0.12, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#666',
                                         borderWidth: 1,
@@ -1364,7 +1545,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMin + 5,
-                                        yValue: fixedRate + 0.5,
+                                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1419,7 +1600,7 @@
                                         type: 'label',
                                         content: `${knockOutRate}%`,
                                         xValue: xMax - 10,
-                                        yValue: knockOutRate + 0.5,
+                                        yValue: knockOutRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1487,7 +1668,7 @@
                                         type: 'label',
                                         content: `${knockOutPrice}%`,
                                         xValue: knockOutPrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -1498,7 +1679,7 @@
                                         type: 'label',
                                         content: `${maxRate}%`,
                                         xValue: knockOutPrice + 2,
-                                        yValue: maxRate,
+                                        yValue: maxRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1509,7 +1690,7 @@
                                         type: 'label',
                                         content: `区间参与率 ${participation}%`,
                                         xValue: 100 - ((100 - knockOutPrice) / 2),
-                                        yValue: (fixedRate + maxRate) / 2,
+                                        yValue: (fixedRate + maxRate) / 2 + Math.max(maxY * 0.12, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#666',
                                         borderWidth: 1,
@@ -1520,7 +1701,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMax - 5,
-                                        yValue: fixedRate + 0.5,
+                                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1600,7 +1781,7 @@
                                         type: 'label',
                                         content: `${strikePrice}%`,
                                         xValue: strikePrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -1611,7 +1792,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMin + 5,
-                                        yValue: fixedRate,
+                                        yValue: fixedRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1623,7 +1804,7 @@
                                         type: 'label',
                                         content: `${binaryRate}%`,
                                         xValue: xMax - 5,
-                                        yValue: binaryRate,
+                                        yValue: binaryRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1703,7 +1884,7 @@
                                         type: 'label',
                                         content: `${strikePrice}%`,
                                         xValue: strikePrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -1714,7 +1895,7 @@
                                         type: 'label',
                                         content: `${binaryRate}%`,
                                         xValue: xMin + 5,
-                                        yValue: binaryRate,
+                                        yValue: binaryRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1726,7 +1907,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMax - 5,
-                                        yValue: fixedRate,
+                                        yValue: fixedRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -1760,7 +1941,7 @@
             
             // 绘制看涨香草图表
             drawBullVanillaChart(participation, fixedRate) {
-                const xMin = 80;
+                const xMin = 90; // 压缩左侧（无要素区），聚焦右侧主要上涨部分
                 const xMax = 120;
                 const maxY = Math.max(fixedRate, participation * 0.2) + 1; // 考虑20%涨幅情况
                 
@@ -1831,7 +2012,7 @@
                         type: 'label',
                         content: `参与率 ${participation}%`,
                         xValue: xMax - 15,
-                        yValue: participation * 0.1 + fixedRate + 0.5,
+                        yValue: participation * 0.1 + fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -1843,7 +2024,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMin + 5,
-                        yValue: fixedRate + 0.3,
+                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -1869,6 +2050,10 @@
                         ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
                         scales: {
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
                                 min: -5 // 允许显示负半轴
@@ -1877,11 +2062,11 @@
                     }
                 });
             },
-            
+
             // 绘制看跌香草图表
             drawBearVanillaChart(participation, fixedRate) {
                 const xMin = 80;
-                const xMax = 120;
+                const xMax = 110;
                 const maxY = Math.max(fixedRate, participation * 0.2) + 1; // 考虑20%跌幅情况
                 
                 // 确保Canvas元素存在且Chart对象可用
@@ -1951,7 +2136,7 @@
                         type: 'label',
                         content: `参与率 ${participation}%`,
                         xValue: xMin + 15,
-                        yValue: participation * 0.1 + fixedRate + 0.5,
+                        yValue: participation * 0.1 + fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -1963,7 +2148,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMax - 5,
-                        yValue: fixedRate + 0.3,
+                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -1991,7 +2176,8 @@
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
                             x: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
-                                position: 'zero' // 将x轴显示在y=0的位置
+                                position: 'zero', // 将x轴显示在y=0的位置
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
                             },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
@@ -2001,7 +2187,7 @@
                     }
                 });
             },
-            
+
             // 绘制所有香草图表
             drawVanillaCharts(isBull, participation, fixedRate) {
                 // 绘制两种情况的图表
@@ -2027,8 +2213,8 @@
             
             // 绘制看涨自动赎回敲出情形图表
             drawBullAutocallKnockoutChart(knockOutPrice, knockOutRate, fixedRate) {
-                const xMin = 80;
-                const xMax = 120;
+                const xMin = knockOutPrice - 8;
+                const xMax = knockOutPrice + 18;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
                 // 确保Canvas元素存在且Chart.js已加载
@@ -2071,7 +2257,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2082,7 +2268,7 @@
                         type: 'label',
                         content: `${knockOutRate}%`,
                         xValue: xMax - 5,
-                        yValue: knockOutRate + 0.3,
+                        yValue: knockOutRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2108,6 +2294,10 @@
                         ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
                         scales: {
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
                                 min: -0.5 // 允许显示负半轴
@@ -2119,8 +2309,8 @@
             
             // 绘制看涨自动赎回未敲出情形图表
             drawBullAutocallNonKnockoutChart(knockOutPrice, knockOutRate, fixedRate) {
-                const xMin = 80;
-                const xMax = 120;
+                const xMin = knockOutPrice - 25;
+                const xMax = knockOutPrice + 8;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
                 // 确保Canvas元素存在且Chart.js已加载
@@ -2163,7 +2353,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2174,7 +2364,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMin + 5,
-                        yValue: fixedRate + 0.3,
+                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2200,6 +2390,10 @@
                         ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
                         scales: {
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
                                 min: -0.5 // 允许显示负半轴
@@ -2211,8 +2405,8 @@
             
             // 绘制看跌自动赎回敲出情形图表
             drawBearAutocallKnockoutChart(knockOutPrice, knockOutRate, fixedRate) {
-                const xMin = 80;
-                const xMax = 120;
+                const xMin = knockOutPrice - 18;
+                const xMax = knockOutPrice + 8;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
                 // 确保Canvas元素存在且Chart.js已加载
@@ -2255,7 +2449,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2266,7 +2460,7 @@
                         type: 'label',
                         content: `${knockOutRate}%`,
                         xValue: xMin + 5,
-                        yValue: knockOutRate + 0.3,
+                        yValue: knockOutRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2292,6 +2486,10 @@
                         ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
                         scales: {
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
                                 min: -0.5 // 允许显示负半轴
@@ -2303,8 +2501,8 @@
             
             // 绘制看跌自动赎回未敲出情形图表
             drawBearAutocallNonKnockoutChart(knockOutPrice, knockOutRate, fixedRate) {
-                const xMin = 80;
-                const xMax = 120;
+                const xMin = knockOutPrice - 8;
+                const xMax = knockOutPrice + 25;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
                 // 确保Canvas元素存在且Chart.js已加载
@@ -2347,7 +2545,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2358,7 +2556,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMax - 5,
-                        yValue: fixedRate + 0.3,
+                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2384,6 +2582,10 @@
                         ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
                         scales: {
                             ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
                             y: {
                                 ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
                                 min: -0.5 // 允许显示负半轴
@@ -2466,7 +2668,7 @@
                                         type: 'label',
                                         content: `${upperLimitPrice}%`,
                                         xValue: upperLimitPrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -2477,7 +2679,7 @@
                                         type: 'label',
                                         content: `区间参与率 ${participation}%`,
                                         xValue: (zeroReturnPrice + upperLimitPrice) / 2,
-                                        yValue: (fixedRate + maxRate) / 2,
+                                        yValue: (fixedRate + maxRate) / 2 + Math.max(maxY * 0.12, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#666',
                                         borderWidth: 1,
@@ -2488,7 +2690,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMin + 5,
-                                        yValue: fixedRate + 0.3,
+                                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -2500,7 +2702,7 @@
                                         type: 'label',
                                         content: `${maxRate}%`,
                                         xValue: xMax - 5,
-                                        yValue: maxRate,
+                                        yValue: maxRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -2596,7 +2798,7 @@
                                         type: 'label',
                                         content: `${lowerLimitPrice.toFixed(2)}%`,
                                         xValue: lowerLimitPrice,
-                                        yValue: 0.5,
+                                        yValue: maxY * 0.08,
                                         backgroundColor: 'white',
                                         borderColor: '#999',
                                         borderWidth: 1,
@@ -2607,7 +2809,7 @@
                                         type: 'label',
                                         content: `区间参与率 ${participation}%`,
                                         xValue: (lowerLimitPrice + zeroReturnPrice) / 2,
-                                        yValue: (fixedRate + maxRate) / 2 + 0.5,
+                                        yValue: (fixedRate + maxRate) / 2 + Math.max(maxY * 0.12, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#666',
                                         borderWidth: 1,
@@ -2618,7 +2820,7 @@
                                         type: 'label',
                                         content: `${fixedRate}%`,
                                         xValue: xMax - 3,
-                                        yValue: fixedRate + 0.3,
+                                        yValue: fixedRate + Math.max(maxY * 0.15, 0.8),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -2630,7 +2832,7 @@
                                         type: 'label',
                                         content: `${maxRate}%`,
                                         xValue: xMin + 2,
-                                        yValue: maxRate,
+                                        yValue: maxRate + Math.max(maxY * 0.1, 0.5),
                                         backgroundColor: 'white',
                                         borderColor: '#004aad',
                                         borderWidth: 1,
@@ -2658,7 +2860,7 @@
             
             // 绘制看涨自动赎回图表
             drawBullAutocallChart(knockOutPrice, knockOutRate, fixedRate) {
-                const xMin = 80;
+                const xMin = 90;
                 const xMax = 120;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
@@ -2723,7 +2925,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2734,7 +2936,7 @@
                         type: 'label',
                         content: `${knockOutRate}%`,
                         xValue: xMax - 5,
-                        yValue: knockOutRate,
+                        yValue: knockOutRate + Math.max(maxY * 0.1, 0.5),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2746,7 +2948,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMin + 5,
-                        yValue: fixedRate,
+                        yValue: fixedRate + Math.max(maxY * 0.1, 0.5),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2778,15 +2980,22 @@
                                     ...customAnnotations
                                 }
                             }
+                        },
+                        scales: {
+                            ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            }
                         }
                     }
                 });
             },
-            
+
             // 绘制看跌自动赎回图表
             drawBearAutocallChart(knockOutPrice, knockOutRate, fixedRate) {
                 const xMin = 80;
-                const xMax = 120;
+                const xMax = 110;
                 const maxY = Math.max(knockOutRate, fixedRate) + 1;
                 
                 // 确保Canvas元素存在且Chart对象可用
@@ -2850,7 +3059,7 @@
                         type: 'label',
                         content: `${knockOutPrice}%`,
                         xValue: knockOutPrice,
-                        yValue: 0.5,
+                        yValue: maxY * 0.08,
                         backgroundColor: 'white',
                         borderColor: '#999',
                         borderWidth: 1,
@@ -2861,7 +3070,7 @@
                         type: 'label',
                         content: `${knockOutRate}%`,
                         xValue: xMin + 5,
-                        yValue: knockOutRate,
+                        yValue: knockOutRate + Math.max(maxY * 0.1, 0.5),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2873,7 +3082,7 @@
                         type: 'label',
                         content: `${fixedRate}%`,
                         xValue: xMax - 5,
-                        yValue: fixedRate,
+                        yValue: fixedRate + Math.max(maxY * 0.1, 0.5),
                         backgroundColor: 'white',
                         borderColor: '#004aad',
                         borderWidth: 1,
@@ -2904,6 +3113,13 @@
                                     ...this.getBaseOptions(xMin, xMax, maxY).plugins.annotation.annotations,
                                     ...customAnnotations
                                 }
+                            }
+                        },
+                        scales: {
+                            ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
                             }
                         }
                     }
@@ -2952,452 +3168,343 @@
                             delete this.charts[chartName];
                         }
                     });
+                } else if (type === 'dividend_autocall') {
+                    // 销毁红利自动赎回相关图表
+                    ['daKnockOut', 'daNonKnockOut'].forEach(chartName => {
+                        if (this.charts[chartName]) {
+                            this.charts[chartName].destroy();
+                            delete this.charts[chartName];
+                        }
+                    });
                 }
+            },
+            
+            // 绘制红利自动赎回-触发敲出损益图
+            drawDaKnockOutChart(isBull, knockOutPrice, knockOutRate, fixedRate, knockInRate) {
+                const xMin = isBull ? knockOutPrice - 8 : knockOutPrice - 18;
+                const xMax = isBull ? knockOutPrice + 18 : knockOutPrice + 8;
+                const maxY = Math.max(knockOutRate, fixedRate, knockInRate) + 2;
+                
+                const canvas = document.getElementById('da-knockOutChart');
+                if (!canvas || typeof Chart === 'undefined') return;
+                
+                if (this.charts.daKnockOut) {
+                    this.charts.daKnockOut.destroy();
+                }
+                
+                const dataPoints = [];
+                
+                if (isBull) {
+                    // 看涨敲出：价格 >= 敲出价时触发敲出
+                    for (let price = xMin; price < knockOutPrice; price += 0.5) {
+                        dataPoints.push({x: price, y: null});
+                    }
+                    for (let price = knockOutPrice; price <= xMax; price += 0.5) {
+                        dataPoints.push({x: price, y: knockOutRate});
+                    }
+                } else {
+                    // 看跌敲出：价格 <= 敲出价时触发敲出
+                    for (let price = xMin; price <= knockOutPrice; price += 0.5) {
+                        dataPoints.push({x: price, y: knockOutRate});
+                    }
+                    for (let price = knockOutPrice + 0.5; price <= xMax; price += 0.5) {
+                        dataPoints.push({x: price, y: null});
+                    }
+                }
+                
+                const customAnnotations = {
+                    knockOutLine: {
+                        type: 'line',
+                        xMin: knockOutPrice,
+                        xMax: knockOutPrice,
+                        yMin: -0.5,
+                        yMax: maxY,
+                        borderColor: '#999',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    knockOutLabel: {
+                        type: 'label',
+                        content: `${knockOutPrice}%`,
+                        xValue: knockOutPrice,
+                        yValue: maxY * 0.06,
+                        backgroundColor: 'white',
+                        borderColor: '#999',
+                        borderWidth: 1,
+                        padding: 3
+                    },
+                    knockOutRateLabel: {
+                        type: 'label',
+                        content: `${knockOutRate}%`,
+                        xValue: isBull ? xMax - 5 : xMin + 5,
+                        yValue: knockOutRate + Math.max(maxY * 0.15, 0.8),
+                        backgroundColor: 'white',
+                        borderColor: '#004aad',
+                        borderWidth: 1,
+                        padding: 3,
+                        font: { weight: 'bold' }
+                    }
+                };
+
+                this.charts.daKnockOut = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            data: dataPoints,
+                            borderColor: '#004aad',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0,
+                            z: 1
+                        }]
+                    },
+                    options: {
+                        ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
+                        scales: {
+                            ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
+                            y: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
+                                min: -0.5
+                            }
+                        }
+                    }
+                });
+            },
+            
+            // 绘制红利自动赎回-未触发敲出损益图
+            drawDaNonKnockOutChart(isBull, knockOutPrice, knockOutRate, fixedRate, knockInPrice, knockInRate) {
+                const xMin = isBull ? knockInPrice - 10 : knockOutPrice - 8;
+                const xMax = isBull ? knockOutPrice + 8 : knockInPrice + 10;
+                const maxY = Math.max(knockOutRate, fixedRate, knockInRate) + 2;
+                
+                const canvas = document.getElementById('da-nonKnockOutChart');
+                if (!canvas || typeof Chart === 'undefined') return;
+                
+                if (this.charts.daNonKnockOut) {
+                    this.charts.daNonKnockOut.destroy();
+                }
+                
+                // 敲入利率数据（红色线）和红利利率数据（蓝色线）
+                const dataPoints1 = []; // 敲入利率部分
+                const dataPoints2 = []; // 红利利率部分
+                
+                if (isBull) {
+                    // 看涨未敲出：
+                    // - 价格 < 敲入价：曾触发敲入，收益为敲入利率
+                    // - 敲入价 <= 价格 < 敲出价：未触发敲入，收益为红利利率
+                    // - 价格 >= 敲出价：无数据（已敲出）
+                    for (let price = xMin; price < knockInPrice; price += 0.5) {
+                        dataPoints1.push({x: price, y: knockInRate});
+                        dataPoints2.push({x: price, y: null});
+                    }
+                    for (let price = knockInPrice; price < knockOutPrice; price += 0.5) {
+                        dataPoints1.push({x: price, y: null});
+                        dataPoints2.push({x: price, y: fixedRate});
+                    }
+                    for (let price = knockOutPrice; price <= xMax; price += 0.5) {
+                        dataPoints1.push({x: price, y: null});
+                        dataPoints2.push({x: price, y: null});
+                    }
+                } else {
+                    // 看跌未敲出：
+                    // - 价格 <= 敲出价：无数据（已敲出）
+                    // - 敲出价 < 价格 <= 敲入价：未触发敲入，收益为红利利率
+                    // - 价格 > 敲入价：曾触发敲入，收益为敲入利率
+                    for (let price = xMin; price <= knockOutPrice; price += 0.5) {
+                        dataPoints1.push({x: price, y: null});
+                        dataPoints2.push({x: price, y: null});
+                    }
+                    for (let price = knockOutPrice + 0.5; price <= knockInPrice; price += 0.5) {
+                        dataPoints1.push({x: price, y: null});
+                        dataPoints2.push({x: price, y: fixedRate});
+                    }
+                    for (let price = knockInPrice + 0.5; price <= xMax; price += 0.5) {
+                        dataPoints1.push({x: price, y: knockInRate});
+                        dataPoints2.push({x: price, y: null});
+                    }
+                }
+                
+                // 标签位置策略：将所有标签分层放置，避免相互遮挡
+                // 第1层（底部）：价格标签，y = maxY * 0.06
+                // 第2层：敲入收益率标签，y = knockInRate + maxY * 0.22（远离底部价格标签）
+                // 第3层：红利收益率标签，y = fixedRate + maxY * 0.15
+                const priceLabelY = maxY * 0.06;
+                const knockInRateLabelY = knockInRate + Math.max(maxY * 0.22, 1.5);
+                const fixedRateLabelY = fixedRate + Math.max(maxY * 0.15, 0.8);
+                
+                const customAnnotations = {
+                    knockInLine: {
+                        type: 'line',
+                        xMin: knockInPrice,
+                        xMax: knockInPrice,
+                        yMin: -0.5,
+                        yMax: maxY,
+                        borderColor: '#e63946',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    knockInLabel: {
+                        type: 'label',
+                        content: `${knockInPrice}%`,
+                        xValue: knockInPrice,
+                        yValue: priceLabelY,
+                        backgroundColor: 'white',
+                        borderColor: '#e63946',
+                        borderWidth: 1,
+                        padding: 3
+                    },
+                    knockOutLine: {
+                        type: 'line',
+                        xMin: knockOutPrice,
+                        xMax: knockOutPrice,
+                        yMin: -0.5,
+                        yMax: maxY,
+                        borderColor: '#999',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    knockOutLabel: {
+                        type: 'label',
+                        content: `${knockOutPrice}%`,
+                        xValue: knockOutPrice,
+                        yValue: priceLabelY,
+                        backgroundColor: 'white',
+                        borderColor: '#999',
+                        borderWidth: 1,
+                        padding: 3
+                    },
+                    fixedRateLabel: {
+                        type: 'label',
+                        content: `${fixedRate}%`,
+                        xValue: (knockInPrice + knockOutPrice) / 2,
+                        yValue: fixedRateLabelY,
+                        backgroundColor: 'white',
+                        borderColor: '#004aad',
+                        borderWidth: 1,
+                        padding: 3,
+                        font: { weight: 'bold' }
+                    },
+                    knockInRateLabel: {
+                        type: 'label',
+                        content: `${knockInRate}%`,
+                        xValue: isBull ? xMin + 5 : xMax - 5,
+                        yValue: knockInRateLabelY,
+                        backgroundColor: 'white',
+                        borderColor: '#004aad',
+                        borderWidth: 1,
+                        padding: 3,
+                        font: { weight: 'bold' }
+                    }
+                };
+
+                this.charts.daNonKnockOut = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: `曾触发敲入(${knockInRate}%)`,
+                                data: dataPoints1,
+                                borderColor: '#e63946',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0,
+                                z: 1
+                            },
+                            {
+                                label: `未敲入(${fixedRate}%)`,
+                                data: dataPoints2,
+                                borderColor: '#004aad',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0,
+                                z: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations),
+                        plugins: {
+                            ...this.getBaseOptions(xMin, xMax, maxY, customAnnotations).plugins,
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: { font: { size: 10 } }
+                            }
+                        },
+                        scales: {
+                            ...this.getBaseOptions(xMin, xMax, maxY).scales,
+                            x: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.x,
+                                ticks: { ...this.getBaseOptions(xMin, xMax, maxY).scales.x.ticks, stepSize: 5 }
+                            },
+                            y: {
+                                ...this.getBaseOptions(xMin, xMax, maxY).scales.y,
+                                min: -0.5
+                            }
+                        }
+                    }
+                });
+            },
+            
+            // 绘制所有红利自动赎回图表
+            drawDividendAutocallCharts(isBull, knockOutPrice, knockOutRate, fixedRate, knockInPrice, knockInRate) {
+                this.drawDaKnockOutChart(isBull, knockOutPrice, knockOutRate, fixedRate, knockInRate);
+                this.drawDaNonKnockOutChart(isBull, knockOutPrice, knockOutRate, fixedRate, knockInPrice, knockInRate);
             }
         };
 
         // PPT导出模块
+        // ============================================================
+        // PPT 导出器 — 调用 Python 后端生成可编辑原生图表的 PPT
+        // 服务地址：默认 http://127.0.0.1:5000
+        // ============================================================
         const PptExporter = {
-            // 将Canvas转换为Base64 PNG图片
-            captureChart(canvasId) {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) {
-                    console.warn('Canvas not found:', canvasId);
-                    return null;
-                }
+            API_BASE: 'http://127.0.0.1:5000',
+
+            // 确保后端服务运行
+            async _ensureServer() {
                 try {
-                    // 提高分辨率：临时调整canvas尺寸
-                    const chartInstance = ChartManager.charts[canvasId] || Object.values(ChartManager.charts).find(c => c.canvas === canvas);
-                    if (chartInstance) {
-                        // 使用Chart.js的toBase64Image方法获取高清图片
-                        return chartInstance.toBase64Image('image/png', 1);
-                    }
-                    return canvas.toDataURL('image/png');
+                    const resp = await fetch(`${this.API_BASE}/api/health`, { signal: AbortSignal.timeout(2000) });
+                    if (resp.ok) return true;
                 } catch (e) {
-                    console.error('Failed to capture canvas:', canvasId, e);
-                    return null;
+                    // 服务未运行
                 }
+                alert('PPT导出服务未启动。\n\n请在项目目录下运行:\npip install -r requirements.txt\npython server.py\n\n然后重试。');
+                return false;
             },
 
-            // 获取当前方向的图表Canvas ID列表
-            getChartIds(productType, isBull) {
-                const direction = isBull ? 'bull' : 'bear';
-                const chartMap = {
-                    sharkfin: {
-                        bull: ['sharkfin-bullKnockOutChart', 'sharkfin-bullNoKnockOutChart'],
-                        bear: ['sharkfin-bearKnockOutChart', 'sharkfin-bearNoKnockOutChart']
-                    },
-                    binary: {
-                        bull: ['binary-bullChart'],
-                        bear: ['binary-bearChart']
-                    },
-                    spread: {
-                        bull: ['spread-bullChart'],
-                        bear: ['spread-bearChart']
-                    },
-                    vanilla: {
-                        bull: ['vanilla-bullChart'],
-                        bear: ['vanilla-bearChart']
-                    },
-                    autocall: {
-                        bull: ['autocall-bull-knockoutChart', 'autocall-bull-nonknockoutChart'],
-                        bear: ['autocall-bear-knockoutChart', 'autocall-bear-nonknockoutChart']
-                    }
-                };
-                return (chartMap[productType] && chartMap[productType][direction]) || [];
-            },
-
-            // 根据canvasId查找Chart实例
-            findChartInstance(canvasId) {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return null;
-                // Chart.js在canvas上存储chart实例
-                return Chart.getChart(canvas);
-            },
-
-            // 高清捕获图表（利用Chart.js内置方法）
-            captureChartHD(canvasId) {
-                const chart = this.findChartInstance(canvasId);
-                if (chart) {
-                    return chart.toBase64Image('image/png', 1);
-                }
-                // 降级方案：直接从canvas捕获
-                return this.captureChart(canvasId);
-            },
-
-            // 创建格式化的产品表格行（匹配对客版PPT样式）
-            createTableRows(productData, productTitle, isBull) {
-                const rows = [];
-                const dirLabel = isBull ? '看涨' : '看跌';
-                
-                // 第0行：合并表头 - 白底，产品名称
-                const headerText = `${productTitle}（示例，报价仅供参考）`;
-                rows.push([
-                    { text: headerText, options: { colspan: 2, fill: { color: 'FFFFFF' }, color: '162919', bold: true, fontSize: 11, fontFace: 'Microsoft YaHei', align: 'left', valign: 'middle', border: { type: 'solid', color: 'D0D0D0', pt: 0.5 } } }
-                ]);
-                
-                // 数据行 - 匹配参考PPT：前2行数值列蓝底白字，后续交替灰白
-                productData.forEach((row, index) => {
-                    const isDirectionRow = row[0] === '结构方向';
-                    // 前2个数据行(index 0,1) 数值列用蓝底(#004C8D)白字
-                    const useBlueValue = !isDirectionRow && index < 2;
-                    const labelBg = 'FFFFFF';
-                    const valueBg = useBlueValue ? '004C8D' : (index % 2 === 0 ? 'F5F7FA' : 'FFFFFF');
-                    const valueColor = useBlueValue ? 'FFFFFF' : (isDirectionRow ? '004C8D' : '162919');
-                    
-                    rows.push([
-                        { text: String(row[0]), options: { fill: { color: labelBg }, bold: true, fontSize: 10, fontFace: 'Microsoft YaHei', color: '162919', align: 'left', valign: 'middle', border: { type: 'solid', color: 'E0E0E0', pt: 0.5 } } },
-                        { text: String(row[1]), options: { fill: { color: valueBg }, color: valueColor, bold: isDirectionRow, fontSize: 10, fontFace: 'Microsoft YaHei', align: 'left', valign: 'middle', border: { type: 'solid', color: 'E0E0E0', pt: 0.5 } } }
-                    ]);
-                });
-                
-                return rows;
-            },
-
-            // 格式化收益情景文本（用于第2页）
-            formatScenarioText(returnText) {
-                if (!returnText) return [];
-                const scenarios = [];
-                const lines = returnText.split('\n').filter(l => l.trim());
-                let currentScenario = null;
-                
-                for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (!trimmed) continue;
-                    
-                    // 检测情景标题（以数字或"情景"开头）
-                    if (/^(情景|情况|[\d]+[\.\)、]|◆|■|【|\[)/.test(trimmed)) {
-                        if (currentScenario) {
-                            scenarios.push(currentScenario);
-                        }
-                        currentScenario = { title: trimmed, details: [] };
-                    } else if (currentScenario) {
-                        currentScenario.details.push(trimmed);
-                    } else {
-                        // 第一行作为标题less场景
-                        currentScenario = { title: trimmed, details: [] };
-                    }
-                }
-                if (currentScenario) {
-                    scenarios.push(currentScenario);
-                }
-                return scenarios;
-            },
-
-            // 通用导出方法 - 匹配对客版PPT样式（双页：产品要素+情景分析）
-            async exportProduct(config) {
-                const { productType, isBull, productData, returnText, title, seriesName, baseView, riskTip } = config;
-                
+            // 通用导出方法 — 发送产品数据到 Python 后端
+            async _callApi(endpoint, payload, fileName) {
                 try {
-                    const pptx = new PptxGenJS();
-                    
-                    // 设置16:9宽屏布局
-                    pptx.defineLayout({ name: 'WIDE', width: 13.33, height: 7.5 });
-                    pptx.layout = 'WIDE';
-                    
-                    const dirLabel = isBull ? '看涨' : '看跌';
-                    const fullTitle = `${title} - ${dirLabel}`;
-                    
-                    // ============================================================
-                    // 第1页：产品要素 + 损益图
-                    // ============================================================
-                    const slide1 = pptx.addSlide();
-                    
-                    // --- 顶部标题区（匹配参考PPT：左上30pt蓝色标题 + 竖线装饰）---
-                    slide1.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 0.15, w: 0.06, h: 0.55,
-                        fill: { color: '0D4477' }
+                    const resp = await fetch(`${this.API_BASE}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
                     });
-                    slide1.addText(fullTitle, {
-                        x: 0.45, y: 0.15, w: 10, h: 0.55,
-                        fontSize: 26,
-                        fontFace: 'Microsoft YaHei',
-                        bold: true,
-                        color: '004C8D',
-                        valign: 'middle'
-                    });
-                    
-                    // 顶部右侧系列标签
-                    slide1.addText(seriesName || '跃享系列', {
-                        x: 10.8, y: 0.2, w: 2.2, h: 0.4,
-                        fontSize: 10,
-                        fontFace: 'Microsoft YaHei',
-                        color: 'A99071',
-                        align: 'right'
-                    });
-                    
-                    // 标题下分隔线
-                    slide1.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 0.78, w: 12.9, h: 0.012,
-                        fill: { color: 'D0D0D0' }
-                    });
-                    
-                    // --- 左侧：产品要素表格 ---
-                    const tableRows = this.createTableRows(productData, title, isBull);
-                    const tableHeight = Math.min(tableRows.length * 0.38, 5.6);
-                    slide1.addTable(tableRows, {
-                        x: 0.2, y: 0.95, w: 6.5,
-                        colWidths: [2.2, 4.3],
-                        border: { type: 'solid', color: 'D0D0D0', pt: 0.5 },
-                        valign: 'middle',
-                        hAlign: 'left',
-                        rowHeights: tableRows.map((row, i) => {
-                            if (i === 0) return 0.45;  // 表头
-                            return 0.36;                // 数据行
-                        })
-                    });
-                    
-                    // --- 右侧：损益图区域 ---
-                    const chartIds = this.getChartIds(productType, isBull);
-                    
-                    if (chartIds.length === 1) {
-                        // 单图表（二元、价差、香草）
-                        slide1.addText('损益图', {
-                            x: 7.0, y: 0.95, w: 6.0, h: 0.35,
-                            fontSize: 12,
-                            fontFace: 'Microsoft YaHei',
-                            bold: true,
-                            color: '162919',
-                            valign: 'middle'
-                        });
-                        
-                        // 方向标签
-                        slide1.addText(dirLabel, {
-                            x: 8.2, y: 0.98, w: 0.7, h: 0.28,
-                            fill: { color: '004C8D' },
-                            color: 'FFFFFF',
-                            fontSize: 9,
-                            fontFace: 'Microsoft YaHei',
-                            bold: true,
-                            align: 'center',
-                            valign: 'middle',
-                            rounding: 3
-                        });
-                        
-                        const chartImg = this.captureChartHD(chartIds[0]);
-                        if (chartImg) {
-                            slide1.addImage({
-                                data: chartImg,
-                                x: 7.0, y: 1.45, w: 6.0, h: 4.5,
-                                sizing: { type: 'contain', w: 6.0, h: 4.5 }
-                            });
-                        }
-                        
-                        // 图下标注
-                        slide1.addText('期末价格/期初价格', {
-                            x: 9.0, y: 5.95, w: 2.0, h: 0.25,
-                            fontSize: 7,
-                            fontFace: 'Microsoft YaHei',
-                            color: '888888',
-                            align: 'center'
-                        });
-                    } else if (chartIds.length >= 2) {
-                        // 双图表（鲨鱼鳍、自动赎回）
-                        const chartLabels = productType === 'autocall'
-                            ? ['发生敲入后损益图', '从未敲入损益图']
-                            : ['敲出情形损益图', '未敲出情形损益图'];
-                        
-                        slide1.addText('损益图', {
-                            x: 7.0, y: 0.95, w: 6.0, h: 0.35,
-                            fontSize: 12,
-                            fontFace: 'Microsoft YaHei',
-                            bold: true,
-                            color: '162919',
-                            valign: 'middle'
-                        });
-                        
-                        chartIds.slice(0, 2).forEach((chartId, idx) => {
-                            const chartImg = this.captureChartHD(chartId);
-                            if (chartImg) {
-                                const yBase = 1.45 + idx * 2.75;
-                                
-                                // 图表子标题
-                                slide1.addText(chartLabels[idx], {
-                                    x: 7.0, y: yBase, w: 2.8, h: 0.28,
-                                    fontSize: 9,
-                                    fontFace: 'Microsoft YaHei',
-                                    bold: true,
-                                    color: '162919'
-                                });
-                                
-                                // 方向标签
-                                slide1.addText(dirLabel, {
-                                    x: 9.9, y: yBase, w: 0.6, h: 0.25,
-                                    fill: { color: '004C8D' },
-                                    color: 'FFFFFF',
-                                    fontSize: 8,
-                                    fontFace: 'Microsoft YaHei',
-                                    bold: true,
-                                    align: 'center',
-                                    valign: 'middle',
-                                    rounding: 2
-                                });
-                                
-                                // 图表图片
-                                slide1.addImage({
-                                    data: chartImg,
-                                    x: 7.0, y: yBase + 0.35, w: 5.8, h: 2.2,
-                                    sizing: { type: 'contain', w: 5.8, h: 2.2 }
-                                });
-                                
-                                // 图下标注
-                                slide1.addText('期末价格/期初价格', {
-                                    x: 9.0, y: yBase + 2.5, w: 1.8, h: 0.2,
-                                    fontSize: 7,
-                                    fontFace: 'Microsoft YaHei',
-                                    color: '888888',
-                                    align: 'center'
-                                });
-                            }
-                        });
+
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+                        throw new Error(err.error || '服务器错误');
                     }
-                    
-                    // --- 底部免责声明 ---
-                    slide1.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 6.55, w: 12.9, h: 0.01,
-                        fill: { color: 'D0D0D0' }
-                    });
-                    slide1.addText('*注：以上数据仅作为解释收益结构的示例，不作为任何产品的任何收益预测与保证，具体结构及要素须以届时产品相关材料的介绍和约定为准。', {
-                        x: 0.2, y: 6.65, w: 10.5, h: 0.3,
-                        fontSize: 7,
-                        fontFace: 'Microsoft YaHei',
-                        color: '888888',
-                        valign: 'middle'
-                    });
-                    slide1.addText('（仅供特定投资者使用）', {
-                        x: 11.0, y: 6.65, w: 2.2, h: 0.3,
-                        fontSize: 9,
-                        fontFace: 'Microsoft YaHei',
-                        bold: true,
-                        color: 'C00000',
-                        align: 'right',
-                        valign: 'middle'
-                    });
-                    
-                    // ============================================================
-                    // 第2页：收益情景分析
-                    // ============================================================
-                    const slide2 = pptx.addSlide();
-                    
-                    // --- 顶部标题区 ---
-                    slide2.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 0.15, w: 0.06, h: 0.55,
-                        fill: { color: '0D4477' }
-                    });
-                    slide2.addText(`${fullTitle} - 情景分析`, {
-                        x: 0.45, y: 0.15, w: 10, h: 0.55,
-                        fontSize: 26,
-                        fontFace: 'Microsoft YaHei',
-                        bold: true,
-                        color: '004C8D',
-                        valign: 'middle'
-                    });
-                    
-                    slide2.addText(seriesName || '跃享系列', {
-                        x: 10.8, y: 0.2, w: 2.2, h: 0.4,
-                        fontSize: 10,
-                        fontFace: 'Microsoft YaHei',
-                        color: 'A99071',
-                        align: 'right'
-                    });
-                    
-                    slide2.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 0.78, w: 12.9, h: 0.012,
-                        fill: { color: 'D0D0D0' }
-                    });
-                    
-                    // --- 收益情景内容 ---
-                    const scenarios = this.formatScenarioText(returnText);
-                    
-                    if (scenarios.length > 0) {
-                        const scenarioCount = Math.min(scenarios.length, 4);
-                        const colWidth = 12.5 / Math.min(scenarioCount, 2);
-                        const startY = 1.05;
-                        const scenarioHeight = 5.5;
-                        
-                        // 根据情景数量布局：2列或1列
-                        const cols = scenarioCount <= 2 ? 1 : 2;
-                        const rows = cols === 1 ? scenarioCount : 2;
-                        
-                        scenarios.slice(0, scenarioCount).forEach((sc, idx) => {
-                            const col = cols === 1 ? 0 : (idx % 2);
-                            const row = cols === 1 ? idx : Math.floor(idx / 2);
-                            const sx = 0.3 + col * (12.7 / cols);
-                            const sy = startY + row * (scenarioHeight / rows);
-                            const sw = (12.7 / cols) - 0.3;
-                            const sh = (scenarioHeight / rows) - 0.2;
-                            
-                            // 情景编号圆圈
-                            const numLabels = ['①', '②', '③', '④'];
-                            slide2.addText(numLabels[idx] || `${idx+1}`, {
-                                x: sx, y: sy, w: 0.4, h: 0.4,
-                                fontSize: 16,
-                                fontFace: 'Microsoft YaHei',
-                                bold: true,
-                                color: '004C8D',
-                                valign: 'middle'
-                            });
-                            
-                            // 情景标题
-                            slide2.addText(sc.title, {
-                                x: sx + 0.45, y: sy, w: sw - 0.5, h: 0.4,
-                                fontSize: 11,
-                                fontFace: 'Microsoft YaHei',
-                                bold: true,
-                                color: '162919',
-                                valign: 'middle'
-                            });
-                            
-                            // 情景详情
-                            const detailText = sc.details.join('\n');
-                            if (detailText) {
-                                slide2.addText(detailText, {
-                                    x: sx + 0.45, y: sy + 0.45, w: sw - 0.5, h: sh - 0.5,
-                                    fontSize: 9,
-                                    fontFace: 'Microsoft YaHei',
-                                    color: '444444',
-                                    valign: 'top',
-                                    lineSpacing: 16
-                                });
-                            }
-                        });
-                    } else {
-                        // 无结构化情景时，显示原始收益文本
-                        slide2.addText(returnText || '暂无收益情景分析', {
-                            x: 0.5, y: 1.1, w: 12.3, h: 5.5,
-                            fontSize: 12,
-                            fontFace: 'Microsoft YaHei',
-                            color: '444444',
-                            valign: 'top',
-                            lineSpacing: 18
-                        });
-                    }
-                    
-                    // --- 底部风险提示 ---
-                    slide2.addShape(pptx.ShapeType.rect, {
-                        x: 0.2, y: 6.55, w: 12.9, h: 0.01,
-                        fill: { color: 'D0D0D0' }
-                    });
-                    slide2.addText(riskTip || '风险提示：本产品为结构性产品，收益取决于挂钩标的表现，存在收益波动风险，请根据自身风险承受能力谨慎投资。', {
-                        x: 0.2, y: 6.65, w: 10.5, h: 0.35,
-                        fontSize: 8,
-                        fontFace: 'Microsoft YaHei',
-                        color: 'C00000',
-                        valign: 'middle'
-                    });
-                    slide2.addText('（仅供特定投资者使用）', {
-                        x: 11.0, y: 6.65, w: 2.2, h: 0.3,
-                        fontSize: 9,
-                        fontFace: 'Microsoft YaHei',
-                        bold: true,
-                        color: 'C00000',
-                        align: 'right',
-                        valign: 'middle'
-                    });
-                    
-                    // ===== 生成并下载PPT =====
-                    const fileName = `${title}_${isBull ? '看涨' : '看跌'}.pptx`;
-                    await pptx.writeFile({ fileName });
+
+                    // 下载文件
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
                     console.log('PPT导出成功！', fileName);
                     return true;
                 } catch (err) {
@@ -3406,69 +3513,221 @@
                 }
             },
 
-            // 导出鲨鱼鳍PPT
-            async exportSharkfin(isBull, productData, returnText) {
-                return this.exportProduct({
-                    productType: 'sharkfin',
-                    isBull,
-                    productData,
-                    returnText,
-                    title: '鲨鱼鳍结构（每日敲出观察）',
-                    seriesName: '跃享系列',
-                    baseView: '基本观点：关注本金安全，对标的的走势与涨跌有预期'
-                });
+            // 提取底层标的简称
+            _getUnderlyingShort(prefix) {
+                const select = document.getElementById(`${prefix}-underlying`);
+                if (!select) return '沪深300指数';
+                const val = select.value;
+                if (val === 'custom') {
+                    const customVal = document.getElementById(`${prefix}-customUnderlying`).value;
+                    return customVal.substring(0, 20);
+                }
+                const option = select.options[select.selectedIndex];
+                return (option && option.text) ? option.text.split('(')[0].trim() : val;
             },
 
-            // 导出二元结构PPT
+            // 导出二元结构 PPT
             async exportBinary(isBull, productData, returnText) {
-                return this.exportProduct({
-                    productType: 'binary',
-                    isBull,
-                    productData,
-                    returnText,
-                    title: '二元结构',
-                    seriesName: '跃享系列',
-                    baseView: '基本观点：关注本金安全，对标的的走势有明确方向预期'
-                });
+                const prefix = 'binary';
+                const strikePrice = parseFloat(document.getElementById(`${prefix}-strikePrice`).value) || 102;
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 2.1;
+                const binaryRate = parseFloat(document.getElementById(`${prefix}-binaryRate`).value) || 3.6;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '34天');
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        strike_price: strikePrice,
+                        fixed_rate: fixedRate,
+                        binary_rate: binaryRate,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '跃享系列'
+                    }]
+                };
+
+                const fileName = `二元结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-binary', payload, fileName);
             },
 
-            // 导出价差结构PPT
+            // 导出鲨鱼鳍 PPT
+            async exportSharkfin(isBull, productData, returnText) {
+                const prefix = 'sharkfin';
+                const knockOutPrice = parseFloat(document.getElementById(`${prefix}-knockOutPrice`).value) || 103;
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 2.1;
+                const knockOutRate = parseFloat(document.getElementById(`${prefix}-knockOutRate`).value) || 5.0;
+                const participation = parseFloat(document.getElementById(`${prefix}-participation`).value) || 100;
+                const maxRate = parseFloat(document.getElementById(`${prefix}-maxRate`).value) || 5.0;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '34天');
+                const hasKnockOut = !isNaN(knockOutPrice) && knockOutPrice > 0;
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        has_knock_out: hasKnockOut,
+                        knock_out_price: knockOutPrice,
+                        fixed_rate: fixedRate,
+                        max_rate: maxRate,
+                        participation: participation,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '跃享系列'
+                    }]
+                };
+
+                const fileName = `鲨鱼鳍结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-sharkfin', payload, fileName);
+            },
+
+            // 导出价差结构 PPT
             async exportSpread(isBull, productData, returnText) {
-                return this.exportProduct({
-                    productType: 'spread',
-                    isBull,
-                    productData,
-                    returnText,
-                    title: '价差结构',
-                    seriesName: '跃享系列',
-                    baseView: '基本观点：关注本金安全，对标的的走势有明确方向预期'
-                });
+                const prefix = 'spread';
+                const strikePrice = parseFloat(document.getElementById(`${prefix}-strikePrice`).value) || 100;
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 1.5;
+                const participation = parseFloat(document.getElementById(`${prefix}-participation`).value) || 100;
+                const maxRate = parseFloat(document.getElementById(`${prefix}-maxRate`).value) || 6.0;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '3个月');
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        strike_price: strikePrice,
+                        fixed_rate: fixedRate,
+                        participation: participation,
+                        max_rate: maxRate,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '跃享系列'
+                    }]
+                };
+
+                const fileName = `价差结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-spread', payload, fileName);
             },
 
-            // 导出香草结构PPT
+            // 导出香草结构 PPT
             async exportVanilla(isBull, productData, returnText) {
-                return this.exportProduct({
-                    productType: 'vanilla',
-                    isBull,
-                    productData,
-                    returnText,
-                    title: '香草结构',
-                    seriesName: '跃享系列',
-                    baseView: '基本观点：关注本金安全，对标的的走势有明确方向预期'
-                });
+                const prefix = 'vanilla';
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 1.0;
+                const participation = parseFloat(document.getElementById(`${prefix}-participation`).value) || 100;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '6个月');
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        fixed_rate: fixedRate,
+                        participation: participation,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '跃享系列'
+                    }]
+                };
+
+                const fileName = `香草结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-vanilla', payload, fileName);
             },
 
-            // 导出自动赎回结构PPT
+            // 导出自动赎回结构 PPT
             async exportAutocall(isBull, productData, returnText) {
-                return this.exportProduct({
-                    productType: 'autocall',
-                    isBull,
-                    productData,
-                    returnText,
-                    title: '自动赎回结构',
-                    seriesName: '凤玺系列',
-                    baseView: '基本观点：关注本金安全，对标的的走势有明确方向预期'
-                });
+                const prefix = 'autocall';
+                const knockOutRate = parseFloat(document.getElementById(`${prefix}-knockOutRate`).value) || 8.0;
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 3.0;
+                const knockOutPrice = parseFloat(document.getElementById(`${prefix}-knockOutPrice`).value) || 100;
+                const knockInPrice = parseFloat(document.getElementById(`${prefix}-knockInPrice`).value) || 80;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '6个月');
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        has_knock_in: true,
+                        knock_out_rate: knockOutRate,
+                        knock_out_price: knockOutPrice,
+                        knock_in_price: knockInPrice,
+                        fixed_rate: fixedRate,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '凤玺系列'
+                    }]
+                };
+
+                const fileName = `自动赎回结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-autocall', payload, fileName);
+            },
+
+            // 导出红利自动赎回结构 PPT
+            async exportDividendAutocall(isBull, returnText) {
+                const prefix = 'da';
+                const knockOutPrice = parseFloat(document.getElementById(`${prefix}-knockOutPrice`).value) || 102;
+                const knockInPrice = parseFloat(document.getElementById(`${prefix}-knockInPrice`).value) || 90;
+                const knockOutRate = parseFloat(document.getElementById(`${prefix}-knockOutRate`).value) || 6.3;
+                const fixedRate = parseFloat(document.getElementById(`${prefix}-fixedRate`).value) || 4.0;
+                const knockInRate = parseFloat(document.getElementById(`${prefix}-knockInRate`).value) || 0.1;
+                const subscription = document.getElementById(`${prefix}-subscription`).value;
+                const termEl = document.getElementById(`${prefix}-term`);
+                const term = (termEl.value === 'custom')
+                    ? document.getElementById(`${prefix}-customTerm`).value
+                    : (termEl.options[termEl.selectedIndex].text || '12个月(1Y)');
+
+                const payload = {
+                    configs: [{
+                        is_bull: isBull,
+                        knock_out_price: knockOutPrice,
+                        knock_in_price: knockInPrice,
+                        knock_out_rate: knockOutRate,
+                        fixed_rate: fixedRate,
+                        knock_in_rate: knockInRate,
+                        subscription: subscription,
+                        underlying: document.getElementById(`${prefix}-infoUnderlying`).textContent,
+                        underlying_short: this._getUnderlyingShort(prefix),
+                        term: term,
+                        term_short: term,
+                        return_text: returnText,
+                        series_name: '凤玺系列'
+                    }]
+                };
+
+                const fileName = `红利自动赎回结构_${isBull ? '看涨' : '看跌'}.pptx`;
+                return this._callApi('/api/generate-dividend-autocall', payload, fileName);
             }
         };
         // 工具函数模块
@@ -3505,7 +3764,7 @@
         const App = {
             // 设置自定义选项的事件监听器
             setupCustomOptionListeners() {
-                const productTypes = ['sharkfin', 'binary', 'spread', 'vanilla', 'autocall'];
+                const productTypes = ['sharkfin', 'binary', 'spread', 'vanilla', 'autocall', 'dividend_autocall'];
                 
                 productTypes.forEach(type => {
                     // 处理挂钩标的的自定义选项
@@ -3743,6 +4002,21 @@
                         underlying = underlying.split('/')[1]; // 提取标的名称
                     }
                     direction = document.getElementById('autocall-productDirection').value === 'bull' ? '看涨' : '看跌';
+                } else if (productType === 'dividend_autocall') {
+                    term = document.getElementById('da-term').value;
+                    if (term === 'custom') {
+                        term = document.getElementById('da-customTerm').value;
+                    }
+                    knockOutPrice = parseFloat(document.getElementById('da-knockOutPrice').value);
+                    fixedRate = parseFloat(document.getElementById('da-fixedRate').value);
+                    knockOutRate = parseFloat(document.getElementById('da-knockOutRate').value);
+                    underlying = document.getElementById('da-underlying').value;
+                    if (underlying === 'custom') {
+                        underlying = document.getElementById('da-customUnderlying').value;
+                    } else {
+                        underlying = underlying.split('/')[1];
+                    }
+                    direction = document.getElementById('da-productDirection').value === 'bull' ? '看涨' : '看跌';
                 }
                 
                 // 查找对应的表格
@@ -3771,6 +4045,8 @@
                     } else if (productType === 'vanilla') {
                         cellCount = 6;
                     } else if (productType === 'autocall') {
+                        cellCount = 7;
+                    } else if (productType === 'dividend_autocall') {
                         cellCount = 7;
                     } else {
                         cellCount = 5;
@@ -3841,6 +4117,19 @@
                         cells[5].textContent = `${fixedRate}%`; // 固定收益率（年化）
                         cells[6].textContent = `${knockOutRate}%`; // 敲出收益率（年化）
                     }
+                } else if (productType === 'dividend_autocall') {
+                    // 红利自动赎回结构有7列
+                    if (cells.length >= 7) {
+                        const daKnockInPrice = parseFloat(document.getElementById('da-knockInPrice').value);
+                        const daKnockInRate = parseFloat(document.getElementById('da-knockInRate').value);
+                        cells[0].textContent = '1'; // 序号
+                        cells[1].textContent = term; // 期限
+                        cells[2].textContent = `${knockOutPrice}%`; // 敲出价格
+                        cells[3].textContent = `${daKnockInPrice}%`; // 敲入价格
+                        cells[4].textContent = `${fixedRate}%`; // 固定收益(红利)
+                        cells[5].textContent = `${knockOutRate}%`; // 敲出收益
+                        cells[6].textContent = `${daKnockInRate}%`; // 敲入收益
+                    }
                 } else {
                     // 其他产品结构有5列
                     if (cells.length >= 5) {
@@ -3871,35 +4160,20 @@
             // 导出鲨鱼鳍PPT
             async exportSharkfinToPPT() {
                 try {
-                    // 显示加载状态
+                    if (!await PptExporter._ensureServer()) return;
                     Utils.showLoading('sharkfin');
                     
-                    // 获取当前产品数据
                     const direction = document.getElementById('sharkfin-productDirection').value;
                     const isBull = direction === 'bull';
                     
-                    // 准备产品数据
-                    const productData = [
-                        ['认购起点', document.getElementById('sharkfin-infoSubscription').textContent],
-                        ['挂钩标的名称（代码）', document.getElementById('sharkfin-infoUnderlying').textContent],
-                        ['期权期限', document.getElementById('sharkfin-infoTerm').textContent],
-                        ['障碍价（敲出价）', document.getElementById('sharkfin-infoKnockOutPrice').textContent],
-                        ['结构方向', document.getElementById('sharkfin-infoDirection').textContent],
-                        ['区间参与率', document.getElementById('sharkfin-infoParticipation').textContent]
-                    ];
-                    
-                    // 获取收益情况文本
                     const returnHtml = document.getElementById('sharkfin-infoReturn').innerHTML || '';
                     const returnText = Utils.htmlToText(returnHtml);
                     
-                    // 导出PPT
-                    await PptExporter.exportSharkfin(isBull, productData, returnText);
+                    await PptExporter.exportSharkfin(isBull, [], returnText);
                     
-                    // 隐藏加载状态
                     Utils.hideLoading('sharkfin');
                 } catch (err) {
                     console.error('PPT导出过程中发生错误:', err);
-                    // 隐藏加载状态
                     Utils.hideLoading('sharkfin');
                     alert('PPT导出失败，请重试！错误信息：' + err.message);
                 }
@@ -4027,36 +4301,20 @@
             // 导出二元PPT
             async exportBinaryToPPT() {
                 try {
-                    // 显示加载状态
+                    if (!await PptExporter._ensureServer()) return;
                     Utils.showLoading('binary');
                     
-                    // 获取当前产品数据
                     const direction = document.getElementById('binary-productDirection').value;
                     const isBull = direction === 'bull';
                     
-                    // 准备产品数据
-                    const productData = [
-                        ['认购起点', document.getElementById('binary-infoSubscription').textContent],
-                        ['挂钩标的名称（代码）', document.getElementById('binary-infoUnderlying').textContent],
-                        ['期权期限', document.getElementById('binary-infoTerm').textContent],
-                        ['行权价', document.getElementById('binary-infoStrikePrice').textContent],
-                        ['结构方向', document.getElementById('binary-infoDirection').textContent],
-                        ['固定收益率（年化）', document.getElementById('binary-infoFixedRate').textContent],
-                        ['二元收益率（年化）', document.getElementById('binary-infoBinaryRate').textContent]
-                    ];
-                    
-                    // 获取收益情况文本
                     const returnHtml = document.getElementById('binary-infoReturn').innerHTML || '';
                     const returnText = Utils.htmlToText(returnHtml);
                     
-                    // 导出PPT
-                    await PptExporter.exportBinary(isBull, productData, returnText);
+                    await PptExporter.exportBinary(isBull, [], returnText);
                     
-                    // 隐藏加载状态
                     Utils.hideLoading('binary');
                 } catch (err) {
                     console.error('PPT导出过程中发生错误:', err);
-                    // 隐藏加载状态
                     Utils.hideLoading('binary');
                     alert('PPT导出失败，请重试！错误信息：' + err.message);
                 }
@@ -4205,37 +4463,20 @@
             // 导出价差PPT
             async exportSpreadToPPT() {
                 try {
-                    // 显示加载状态
+                    if (!await PptExporter._ensureServer()) return;
                     Utils.showLoading('spread');
                     
-                    // 获取当前产品数据
                     const direction = document.getElementById('spread-productDirection').value;
                     const isBull = direction === 'bull';
                     
-                    // 准备产品数据
-                    const productData = [
-                        ['认购起点', document.getElementById('spread-infoSubscription').textContent],
-                        ['挂钩标的名称（代码）', document.getElementById('spread-infoUnderlying').textContent],
-                        ['期权期限', document.getElementById('spread-infoTerm').textContent],
-                        ['行权价', document.getElementById('spread-infoStrikePrice').textContent],
-                        ['结构方向', document.getElementById('spread-infoDirection').textContent],
-                        ['固定收益率（年化）', document.getElementById('spread-infoFixedRate').textContent],
-                        ['参与率', document.getElementById('spread-infoParticipation').textContent],
-                        ['最高收益率（年化）', document.getElementById('spread-infoMaxRate').textContent]
-                    ];
-                    
-                    // 获取收益情况文本
                     const returnHtml = document.getElementById('spread-infoReturn').innerHTML || '';
                     const returnText = Utils.htmlToText(returnHtml);
                     
-                    // 导出PPT
-                    await PptExporter.exportSpread(isBull, productData, returnText);
+                    await PptExporter.exportSpread(isBull, [], returnText);
                     
-                    // 隐藏加载状态
                     Utils.hideLoading('spread');
                 } catch (err) {
                     console.error('PPT导出过程中发生错误:', err);
-                    // 隐藏加载状态
                     Utils.hideLoading('spread');
                     alert('PPT导出失败，请重试！错误信息：' + err.message);
                 }
@@ -4368,35 +4609,20 @@
             // 导出香草PPT
             async exportVanillaToPPT() {
                 try {
-                    // 显示加载状态
+                    if (!await PptExporter._ensureServer()) return;
                     Utils.showLoading('vanilla');
                     
-                    // 获取当前产品数据
                     const direction = document.getElementById('vanilla-productDirection').value;
                     const isBull = direction === 'bull';
                     
-                    // 准备产品数据
-                    const productData = [
-                        ['认购起点', document.getElementById('vanilla-infoSubscription').textContent],
-                        ['挂钩标的名称（代码）', document.getElementById('vanilla-infoUnderlying').textContent],
-                        ['期权期限', document.getElementById('vanilla-infoTerm').textContent],
-                        ['结构方向', document.getElementById('vanilla-infoDirection').textContent],
-                        ['参与率', document.getElementById('vanilla-infoParticipation').textContent],
-                        ['最低收益率（年化）', document.getElementById('vanilla-infoFixedRate').textContent]
-                    ];
-                    
-                    // 获取收益情况文本
                     const returnHtml = document.getElementById('vanilla-infoReturn').innerHTML || '';
                     const returnText = Utils.htmlToText(returnHtml);
                     
-                    // 导出PPT
-                    await PptExporter.exportVanilla(isBull, productData, returnText);
+                    await PptExporter.exportVanilla(isBull, [], returnText);
                     
-                    // 隐藏加载状态
                     Utils.hideLoading('vanilla');
                 } catch (err) {
                     console.error('PPT导出过程中发生错误:', err);
-                    // 隐藏加载状态
                     Utils.hideLoading('vanilla');
                     alert('PPT导出失败，请重试！错误信息：' + err.message);
                 }
@@ -4500,38 +4726,124 @@
             // 导出自动赎回PPT
             async exportAutocallToPPT() {
                 try {
-                    // 显示加载状态
+                    if (!await PptExporter._ensureServer()) return;
                     Utils.showLoading('autocall');
                     
-                    // 获取当前产品数据
                     const direction = document.getElementById('autocall-productDirection').value;
                     const isBull = direction === 'bull';
                     
-                    // 准备产品数据
-                    const productData = [
-                        ['认购起点', document.getElementById('autocall-infoSubscription').textContent],
-                        ['挂钩标的名称（代码）', document.getElementById('autocall-infoUnderlying').textContent],
-                        ['期权期限', document.getElementById('autocall-infoTerm').textContent],
-                        ['结构方向', document.getElementById('autocall-infoDirection').textContent],
-                        ['敲出观察频率', document.getElementById('autocall-infoObservationFrequency').textContent],
-                        ['敲出价格', document.getElementById('autocall-infoKnockOutPrice').textContent],
-                        ['敲出收益率（年化）', document.getElementById('autocall-infoKnockOutRate').textContent],
-                        ['最低收益率（年化）', document.getElementById('autocall-infoFixedRate').textContent]
-                    ];
-                    
-                    // 获取收益情况文本
                     const returnHtml = document.getElementById('autocall-infoReturn').innerHTML || '';
                     const returnText = Utils.htmlToText(returnHtml);
                     
-                    // 导出PPT
-                    await PptExporter.exportAutocall(isBull, productData, returnText);
+                    await PptExporter.exportAutocall(isBull, [], returnText);
                     
-                    // 隐藏加载状态
                     Utils.hideLoading('autocall');
                 } catch (err) {
                     console.error('PPT导出过程中发生错误:', err);
-                    // 隐藏加载状态
                     Utils.hideLoading('autocall');
+                    alert('PPT导出失败，请重试！错误信息：' + err.message);
+                }
+            },
+
+            // 生成红利自动赎回产品介绍
+            generateDividendAutocallProduct() {
+                // 获取输入值
+                const direction = document.getElementById('da-productDirection').value;
+                const isBull = direction === 'bull';
+                let underlying = document.getElementById('da-underlying').value;
+                let term = document.getElementById('da-term').value;
+                const knockOutPrice = parseFloat(document.getElementById('da-knockOutPrice').value);
+                const knockInPrice = parseFloat(document.getElementById('da-knockInPrice').value);
+                const knockOutRate = parseFloat(document.getElementById('da-knockOutRate').value);
+                const fixedRate = parseFloat(document.getElementById('da-fixedRate').value);
+                const knockInRate = parseFloat(document.getElementById('da-knockInRate').value);
+                const subscription = document.getElementById('da-subscription').value;
+                
+                // 处理自定义挂钩标的
+                if (underlying === 'custom') {
+                    underlying = document.getElementById('da-customUnderlying').value;
+                }
+                
+                // 处理自定义期限
+                if (term === 'custom') {
+                    term = document.getElementById('da-customTerm').value;
+                }
+
+                // 输入验证
+                if (isNaN(knockOutPrice) || isNaN(knockInPrice) || isNaN(knockOutRate) || isNaN(fixedRate) || isNaN(knockInRate)) {
+                    alert('请输入有效的数值');
+                    return;
+                }
+
+                // 更新产品信息
+                document.getElementById('da-infoSubscription').textContent = subscription;
+                document.getElementById('da-infoUnderlying').textContent = underlying;
+                document.getElementById('da-infoDirection').textContent = isBull ? '看涨' : '看跌';
+                const termDisplay = term === '12M' ? '观察期12个月' : term === '6M' ? '观察期6个月' : term === '18M' ? '观察期18个月' : term;
+                document.getElementById('da-infoTerm').textContent = termDisplay;
+
+                // 更新收益情况
+                const koCondition = isBull ? '标的收盘价 ≥ 敲出价格' : '标的收盘价 ≤ 敲出价格';
+                const noKoCondition = isBull ? '标的收盘价 < 敲出价格' : '标的收盘价 > 敲出价格';
+                const kiCondition = isBull ? '标的收盘价 < 敲入价格' : '标的收盘价 > 敲入价格';
+                const noKiCondition = isBull ? '标的收盘价 ≥ 敲入价格' : '标的收盘价 ≤ 敲入价格';
+                
+                document.getElementById('da-infoReturn').innerHTML = `
+                    <div class="return-section">
+                        <div class="return-condition">(1) 若存续期间任意一个月敲出观察日，${koCondition}（期初价格×${knockOutPrice}%），则触发敲出事件：</div>
+                        <div class="return-result">
+                            ✓ 收益凭证（提前）终止，年化收益率 = <span class="highlight-text">${knockOutRate}%</span>
+                        </div>
+                    </div>
+                    <div class="return-section">
+                        <div class="return-condition">(2) 若存续期间所有月度敲出观察日，${noKoCondition}（期初价格×${knockOutPrice}%），则不触发敲出事件：</div>
+                        <div class="return-result">
+                            ✓ 若存续期间任一交易日，${kiCondition}（期初价格×${knockInPrice}%），年化收益率 = <span class="highlight-text">${knockInRate}%</span>（触发敲入事件）<br>
+                            ✓ 若存续期间所有交易日，${noKiCondition}（期初价格×${knockInPrice}%），年化收益率 = <span class="highlight-text">${fixedRate}%</span>
+                        </div>
+                    </div>
+                `;
+
+                // 绘制图表
+                ChartManager.drawDividendAutocallCharts(isBull, knockOutPrice, knockOutRate, fixedRate, knockInPrice, knockInRate);
+
+                // 更新报价核心要素参考表格
+                this.updateReferenceTable('dividend_autocall');
+            },
+
+            // 重置红利自动赎回表单
+            resetDividendAutocallForm() {
+                document.getElementById('da-productDirection').value = 'bull';
+                document.getElementById('da-underlying').value = '000905.SH/中证500';
+                document.getElementById('da-term').value = '12M';
+                document.getElementById('da-knockOutPrice').value = '102.00';
+                document.getElementById('da-knockInPrice').value = '90.00';
+                document.getElementById('da-knockOutRate').value = '6.30';
+                document.getElementById('da-fixedRate').value = '4.00';
+                document.getElementById('da-knockInRate').value = '0.10';
+                document.getElementById('da-subscription').value = '单笔5万元起认购，1万元追加';
+                
+                // 重新生成产品
+                this.generateDividendAutocallProduct();
+            },
+
+            // 导出红利自动赎回PPT
+            async exportDividendAutocallToPPT() {
+                try {
+                    if (!await PptExporter._ensureServer()) return;
+                    Utils.showLoading('da');
+                    
+                    const direction = document.getElementById('da-productDirection').value;
+                    const isBull = direction === 'bull';
+                    const returnHtml = document.getElementById('da-infoReturn').innerHTML || '';
+                    const returnText = Utils.htmlToText(returnHtml);
+                    
+                    await PptExporter.exportDividendAutocall(isBull, returnText);
+                    
+                    Utils.hideLoading('da');
+                } catch (err) {
+                    console.error('PPT导出过程中发生错误:', err);
+                    Utils.hideLoading('da');
                     alert('PPT导出失败，请重试！错误信息：' + err.message);
                 }
             }
@@ -4551,6 +4863,7 @@
                     App.generateSpreadProduct();
                     App.generateVanillaProduct();
                     App.generateAutocallProduct();
+                    App.generateDividendAutocallProduct();
                     ChartManager.initResizeListeners();
                 } else {
                     // Chart.js未加载，延迟100ms后重试
